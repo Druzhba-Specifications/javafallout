@@ -1,9 +1,8 @@
-# Fallout: New Russia (Java Prototype)
+# Fallout: New Russia (Plain Java Prototype)
 
 A playable Java desktop prototype inspired by classic Fallout-style structure.
 
 ## What's included
-A playable Java desktop prototype inspired by classic Fallout-style structure:
 
 - Turn-based combat loop using S.P.E.C.I.A.L-derived AP and damage calculations.
 - Multiple scenes/locations with travel links, hidden places, enemies, and cutscene text.
