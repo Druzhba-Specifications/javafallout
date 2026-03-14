@@ -273,6 +273,8 @@ public final class GameFrame extends JFrame {
                 + "Rest: Fully heal and trigger possible nightly events.\n"
                 + "Quest Log: Print all quest states and objectives to the mission log.\n\n"
                 + "HUD panel on the right shows S.P.E.C.I.A.L, perks, inventory, progression, and quest counters.\n";
+                + "Rest: Fully heal and trigger possible nightly events.\n\n"
+                + "HUD panel on the right shows S.P.E.C.I.A.L, perks, inventory, and progression.\n";
 
         JOptionPane.showMessageDialog(this, text, "Help", JOptionPane.INFORMATION_MESSAGE);
     }

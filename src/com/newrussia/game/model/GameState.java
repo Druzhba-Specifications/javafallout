@@ -3,6 +3,8 @@ package com.newrussia.game.model;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -15,6 +17,10 @@ public final class GameState {
     private String currentLocationId;
 
     public GameState(Player player, Map<String, Location> world, String currentLocationId, Collection<Quest> quests) {
+
+    private String currentLocationId;
+
+    public GameState(Player player, Map<String, Location> world, String currentLocationId) {
         this.player = player;
         this.world = new LinkedHashMap<>(world);
         this.currentLocationId = currentLocationId;

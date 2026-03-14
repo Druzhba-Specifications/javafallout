@@ -7,11 +7,6 @@ import com.newrussia.game.model.Location;
 import com.newrussia.game.model.Npc;
 import com.newrussia.game.model.Player;
 import com.newrussia.game.model.Quest;
-import com.newrussia.game.core.modules.CombatModule;
-import com.newrussia.game.core.modules.DialogueModule;
-import com.newrussia.game.core.modules.ExplorationModule;
-import com.newrussia.game.core.modules.GameModule;
-import com.newrussia.game.core.modules.QuestModule;
 import com.newrussia.game.systems.CombatSystem;
 import com.newrussia.game.systems.MusicEngine;
 import com.newrussia.game.systems.VoiceEngine;
@@ -22,18 +17,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * Central coordinator for the whole game.
+ *
+ * This class intentionally owns most high-level flow, so Main stays minimal and
+ * UI/components can stay focused on rendering and input.
+ */
 public final class GameController {
     private final WorldBuilder worldBuilder;
     private final MusicEngine musicEngine;
     private final VoiceEngine voiceEngine;
     private final CombatSystem combatSystem;
     private final Random random;
-
-    private final ExplorationModule explorationModule;
-    private final DialogueModule dialogueModule;
-    private final CombatModule combatModule;
-    private final QuestModule questModule;
-    private final List<GameModule> modules;
 
     private GameState state;
     private GameFrame frame;
@@ -44,11 +39,6 @@ public final class GameController {
         this.voiceEngine = new VoiceEngine();
         this.combatSystem = new CombatSystem();
         this.random = new Random();
-        this.explorationModule = new ExplorationModule();
-        this.dialogueModule = new DialogueModule();
-        this.combatModule = new CombatModule();
-        this.questModule = new QuestModule();
-        this.modules = List.of(explorationModule, dialogueModule, combatModule, questModule);
     }
 
     public void boot() {
@@ -57,7 +47,6 @@ public final class GameController {
             frame = new GameFrame(this);
             frame.open();
             startLocationMusic();
-            initializeModules();
             autoActivateIntroQuest();
             logIntro();
             refreshUi();
@@ -73,10 +62,16 @@ public final class GameController {
 
     public Location location() {
         return state.currentLocation();
+    public GameState state() {
+        return state;
     }
 
     public Player player() {
         return state.player();
+    }
+
+    public Location location() {
+        return state.currentLocation();
     }
 
     public List<String> availableDestinations() {
@@ -88,8 +83,9 @@ public final class GameController {
             append("Travel aborted: no destination selected.\n");
             return;
         }
-        explorationModule.onTravel(this, destinationId);
         if (!state.travelTo(destinationId)) {
+        boolean ok = state.travelTo(destinationId);
+        if (!ok) {
             append("Travel denied. Route not available from this location.\n");
             return;
         }
@@ -104,6 +100,9 @@ public final class GameController {
             append("Quest update: Silent Reactor Oath is now ACTIVE.\n");
         }
 
+        append("\n" + location().description() + "\n");
+        append("Texture direction: " + location().textureDirection() + "\n");
+        startLocationMusic();
         refreshUi();
     }
 
@@ -127,7 +126,6 @@ public final class GameController {
 
         Npc npc = location().npcs().get(0);
         frame.setPortraitSeed(npc.portraitSeed());
-        dialogueModule.onDialogueStart(this, npc);
         voiceEngine.playNpcVoiceCue(npc.voiceTag());
 
         append("\n--- Dialogue: " + npc.name() + " [" + npc.role() + "] ---\n");
@@ -135,7 +133,6 @@ public final class GameController {
 
         int speech = player().special().speechPower();
         boolean success = speech >= npc.speechDifficulty();
-        dialogueModule.onDialogueResult(this, npc, success);
         if (success) {
             append("Speech check: " + speech + " vs " + npc.speechDifficulty() + " -> SUCCESS\n");
             append("Reward unlocked: " + npc.successReward() + "\n");
@@ -144,6 +141,10 @@ public final class GameController {
                 activateQuest("checkpoint");
                 completeQuest("checkpoint", "Kirov is convinced, and you secure authentic checkpoint routes.");
             }
+        if (speech >= npc.speechDifficulty()) {
+            append("Speech check: " + speech + " vs " + npc.speechDifficulty() + " -> SUCCESS\n");
+            append("Reward unlocked: " + npc.successReward() + "\n");
+            maybeAddRewardToInventory(npc.successReward());
         } else {
             append("Speech check: " + speech + " vs " + npc.speechDifficulty() + " -> FAILED\n");
             append("Reaction: " + npc.failReaction() + "\n");
@@ -159,12 +160,10 @@ public final class GameController {
         }
 
         Enemy enemy = location().enemies().get(0);
-        combatModule.onCombatStart(this, enemy);
         append("\n[COMBAT] You engage " + enemy.name() + "...\n");
         String result = combatSystem.runFight(player(), enemy);
         append(result);
         maybePostCombatLoot(enemy);
-        combatModule.onCombatEnd(this, enemy);
 
         if ("reactor_catacombs".equals(location().id())) {
             completeQuest("core", "You survived combat in the reactor corridors.");
@@ -179,7 +178,6 @@ public final class GameController {
             return;
         }
 
-        explorationModule.onScan(this, location().id());
         append("\n[SCAN] You inspect structural seams and radio reflections...\n");
         for (String hidden : location().hiddenPlaces()) {
             boolean discovered = tryDiscover(hidden);
@@ -238,7 +236,10 @@ public final class GameController {
         long active = state.quests().values().stream().filter(q -> q.status() == Quest.Status.ACTIVE).count();
         long done = state.quests().values().stream().filter(q -> q.status() == Quest.Status.COMPLETED).count();
         b.append("Active quests: ").append(active).append(" | Completed quests: ").append(done).append("\n");
-        b.append("Modules loaded: ").append(modules.size()).append("\n");
+
+        b.append("\nLocation: ").append(location().title()).append(" (" + location().region() + ")\n");
+        b.append("Track: ").append(musicEngine.currentTrack()).append("\n");
+        b.append("Known hidden places: ").append(state.discoveredHidden().size()).append("\n");
 
         return b.toString();
     }
@@ -259,13 +260,6 @@ public final class GameController {
         if (frame != null) {
             frame.setHudText(buildHudText());
             frame.setLocationTitle(location().title());
-        }
-    }
-
-
-    private void initializeModules() {
-        for (GameModule module : modules) {
-            module.initialize(this);
         }
     }
 
@@ -290,6 +284,14 @@ public final class GameController {
         }
         int roll = random.nextInt(100);
         int threshold = 42 + player().special().perception() * 4 + player().special().luck();
+    }
+
+    private boolean tryDiscover(String hidden) {
+        int roll = random.nextInt(100);
+        int threshold = 42 + player().special().perception() * 4 + player().special().luck();
+        if (state.discoveredHidden().contains(hidden)) {
+            return true;
+        }
         return roll < threshold;
     }
 
@@ -322,6 +324,7 @@ public final class GameController {
             append("Loot: Rifle Ammo\n");
             return;
         }
+
         if (random.nextInt(100) < 35) {
             player().inventory().add("Stimpak");
             append("Loot: Stimpak\n");
@@ -345,7 +348,6 @@ public final class GameController {
         Quest q = state.quests().get(questId);
         if (q != null) {
             q.activate();
-            questModule.onQuestActivated(this, q);
         }
     }
 
@@ -358,7 +360,6 @@ public final class GameController {
         if (q.complete()) {
             player().gainXp(q.xpReward());
             append("Quest complete: " + q.title() + " (" + reason + ") +" + q.xpReward() + " XP\n");
-            questModule.onQuestCompleted(this, q);
         }
     }
 }
