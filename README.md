@@ -1,5 +1,13 @@
 # Fallout: New Russia (Maven + IntelliJ)
 
+The project is back on Maven, remains IntelliJ-friendly, and now uses Java modules (JPMS + gameplay module components).
+
+## Structure
+
+- `src/module-info.java`: JPMS module declaration (`com.newrussia.game`).
+- `src/main/Main.java`: runnable entrypoint.
+- `src/com/newrussia/game/core`: game orchestration.
+- `src/com/newrussia/game/core/modules`: gameplay modules (exploration, dialogue, combat, quest).
 The project is back on Maven and remains IntelliJ-friendly.
 
 ## Structure

@@ -230,6 +230,5 @@ public final class WorldBuilder {
         );
 
         return new GameState(player, world, novayaMetro.id(), quests);
-        return new GameState(player, world, novayaMetro.id());
     }
 }
