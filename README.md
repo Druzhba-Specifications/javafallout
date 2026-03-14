@@ -1,17 +1,23 @@
 # Fallout: New Russia (Maven + IntelliJ)
 
-This project is structured so IntelliJ IDEA can automatically detect and run the main class.
+The project is back on Maven, remains IntelliJ-friendly, and now uses Java modules (JPMS + gameplay module components).
 
-## IntelliJ-ready structure
+## Structure
 
-- `src/main/java/main/Main.java`: runnable entrypoint (auto-detected by IntelliJ).
-- `src/main/java/module-info.java`: JPMS descriptor.
-- `src/main/java/com/newrussia/game/core`: game orchestration.
-- `src/main/java/com/newrussia/game/core/modules`: gameplay modules (exploration, dialogue, combat, quest).
-- `src/main/java/com/newrussia/game/ui`: Swing UI and portrait animation.
-- `src/main/java/com/newrussia/game/model`: stats, entities, state, and quest models.
-- `src/main/java/com/newrussia/game/content`: world/location bootstrap.
-- `src/main/java/com/newrussia/game/systems`: combat, music, and voice systems.
+- `src/module-info.java`: JPMS module declaration (`com.newrussia.game`).
+- `src/main/Main.java`: runnable entrypoint.
+- `src/com/newrussia/game/core`: game orchestration.
+- `src/com/newrussia/game/core/modules`: gameplay modules (exploration, dialogue, combat, quest).
+The project is back on Maven and remains IntelliJ-friendly.
+
+## Structure
+
+- `src/main/Main.java`: runnable entrypoint.
+- `src/com/newrussia/game/core`: game orchestration.
+- `src/com/newrussia/game/ui`: Swing UI and portrait animation.
+- `src/com/newrussia/game/model`: stats, entities, state, and quest models.
+- `src/com/newrussia/game/content`: world/location bootstrap.
+- `src/com/newrussia/game/systems`: combat, music, voice systems.
 
 ## Run with Maven
 
@@ -22,27 +28,47 @@ mvn -q exec:java
 
 ## Run in IntelliJ
 
-1. Open/import project as Maven.
-2. IntelliJ will detect `main.Main` in `src/main/java` automatically.
-3. Click Run on `Main.main(...)` or create an Application run config for `main.Main`.
+1. Import as Maven project.
+2. Use run target: `main.Main`.
+3. Or run Maven goal: `exec:java`.
 
+## Added gameplay systems
 
-## Java version requirement
+- Turn-based S.P.E.C.I.A.L-based combat.
+- Expanded world graph with multiple regions and hidden places.
+- Dialogue with speech checks, rewards, and voice cues.
+- Quest system with active/completed states and XP payouts.
+- Animated talking-head panel and ambient MIDI tracks.
+# Fallout: New Russia (Plain Java Prototype)
 
-This codebase uses **records** and JPMS modules, so it requires **Java 17+**.
+A playable Java desktop prototype inspired by classic Fallout-style structure.
 
-If IntelliJ shows errors like `records are not supported in -source 8`, set:
+## What's included
 
-- **Project SDK**: 17 or newer
-- **Project language level**: 17 or newer
-- **Maven importer JDK**: 17 or newer
+- Turn-based combat loop using S.P.E.C.I.A.L-derived AP and damage calculations.
+- Multiple scenes/locations with travel links, hidden places, enemies, and cutscene text.
+- NPC dialogue interactions with speech checks and animated talking-head panel.
+- Background ambient MIDI music engine and per-NPC voice cue hooks.
+- Central app bootstrap/controller flow through `Main` + `GameController` so startup is organized and easy to extend.
+- Detailed world setup for Novaya Metro, Red Square Ruins, Kremlin Depths, and Volga Shore Fortress.
 
-Then reimport the Maven project.
+## Run
 
-## Gameplay
+```bash
+mvn -q compile
+mvn -q exec:java -Dexec.mainClass=com.newrussia.game.Main
+mvn -q exec:java -Dexec.mainClass=com.newrussia.game.FalloutNewRussiaApp
+```
 
-- Turn-based S.P.E.C.I.A.L combat.
-- Multi-zone world exploration and hidden places.
-- Dialogue + speech checks.
-- Quest progression with active/completed states.
-- Animated talking head and ambient MIDI placeholders.
+If your environment blocks sound devices, the game still runs (music/voice degrade gracefully).
+
+## Project structure
+
+- `Main`: single entrypoint.
+- `GameController`: central wiring and lifecycle management.
+- `GameFrame`: gameplay UI and interactions.
+- `DemoContent`: locations, NPCs, enemies, and story setup.
+- `MusicEngine`, `VoiceEngine`, `CombatEngine`: replaceable systems.
+## Notes on assets
+
+This project includes generated/procedural placeholders for portraits and audio cues (beeps + MIDI), so it is immediately runnable without external files. The architecture is separated into engines (`MusicEngine`, `VoiceEngine`, `CombatEngine`) and content (`DemoContent`) to allow replacing placeholders with full textures, voice acting, and cutscenes.
