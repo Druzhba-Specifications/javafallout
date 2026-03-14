@@ -7,20 +7,17 @@ import java.util.List;
 
 public final class GameFrame extends JFrame {
     private final GameState state;
-    private final MusicEngine musicEngine;
-    private final VoiceEngine voiceEngine;
-    private final CombatEngine combatEngine;
+    private final MusicEngine musicEngine = new MusicEngine();
+    private final VoiceEngine voiceEngine = new VoiceEngine();
+    private final CombatEngine combatEngine = new CombatEngine();
 
     private final JTextArea storyArea = new JTextArea();
     private final JTextArea hudArea = new JTextArea();
     private final PortraitPanel portrait = new PortraitPanel();
 
-    public GameFrame(GameState state, MusicEngine musicEngine, VoiceEngine voiceEngine, CombatEngine combatEngine) {
+    public GameFrame(GameState state) {
         super("Fallout: New Russia");
         this.state = state;
-        this.musicEngine = musicEngine;
-        this.voiceEngine = voiceEngine;
-        this.combatEngine = combatEngine;
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setSize(1180, 780);
         setLocationRelativeTo(null);
@@ -43,6 +40,7 @@ public final class GameFrame extends JFrame {
         add(new JScrollPane(hudArea), BorderLayout.EAST);
 
         refreshScene(true);
+        musicEngine.startAmbientLoop();
     }
 
     private JPanel createMenuPanel() {
@@ -77,7 +75,7 @@ public final class GameFrame extends JFrame {
     private void openTravelDialog() {
         List<String> neighbors = state.currentLocation().neighbors();
         String target = (String) JOptionPane.showInputDialog(this, "Choose destination", "Travel",
-                JOptionPane.PLAIN_MESSAGE, null, neighbors.toArray(), neighbors.get(0));
+                JOptionPane.PLAIN_MESSAGE, null, neighbors.toArray(), neighbors.getFirst());
         if (target != null) {
             state.moveTo(target);
             refreshScene(true);
@@ -91,7 +89,7 @@ public final class GameFrame extends JFrame {
             append("No one is willing to talk here.\n");
             return;
         }
-        Npc npc = npcs.get(0);
+        Npc npc = npcs.getFirst();
         portrait.setSeed(npc.portraitSeed());
         voiceEngine.playVoice(npc.voiceTag());
 
@@ -113,7 +111,7 @@ public final class GameFrame extends JFrame {
             append("No hostiles in this zone.\n");
             return;
         }
-        Enemy enemy = enemies.get(0);
+        Enemy enemy = enemies.getFirst();
         append(combatEngine.fight(state.player(), enemy) + "\n");
         refreshHud();
     }
