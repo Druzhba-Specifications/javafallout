@@ -1,29 +1,33 @@
-# Fallout: New Russia (Plain Java, IntelliJ-friendly)
+# Fallout: New Russia (Plain Java Prototype)
 
-This project is a full restart of the prototype with a clean structure:
+A playable Java desktop prototype inspired by classic Fallout-style structure.
 
-- `src/main/Main.java` is the standalone entrypoint.
-- All other classes live under `src/com/newrussia/game/...` packages.
-- No Maven/Gradle required.
+## What's included
 
-## Run in IntelliJ
+- Turn-based combat loop using S.P.E.C.I.A.L-derived AP and damage calculations.
+- Multiple scenes/locations with travel links, hidden places, enemies, and cutscene text.
+- NPC dialogue interactions with speech checks and animated talking-head panel.
+- Background ambient MIDI music engine and per-NPC voice cue hooks.
+- Central app bootstrap/controller flow through `Main` + `GameController` so startup is organized and easy to extend.
+- Detailed world setup for Novaya Metro, Red Square Ruins, Kremlin Depths, and Volga Shore Fortress.
 
-1. Open project folder.
-2. Mark `src` as sources root if needed.
-3. Run `main.Main`.
-
-## Run in terminal
+## Run
 
 ```bash
-javac -d out $(rg --files src | tr '\n' ' ')
-java -cp out main.Main
+mvn -q compile
+mvn -q exec:java -Dexec.mainClass=com.newrussia.game.Main
+mvn -q exec:java -Dexec.mainClass=com.newrussia.game.FalloutNewRussiaApp
 ```
 
-## Features
+If your environment blocks sound devices, the game still runs (music/voice degrade gracefully).
 
-- Turn-based combat with S.P.E.C.I.A.L-influenced stats.
-- Multi-location exploration with travel graph.
-- NPC dialogue with speech checks.
-- Hidden location scanning and rewards.
-- Animated talking-head portrait panel.
-- Procedural MIDI ambient music and voice cues.
+## Project structure
+
+- `Main`: single entrypoint.
+- `GameController`: central wiring and lifecycle management.
+- `GameFrame`: gameplay UI and interactions.
+- `DemoContent`: locations, NPCs, enemies, and story setup.
+- `MusicEngine`, `VoiceEngine`, `CombatEngine`: replaceable systems.
+## Notes on assets
+
+This project includes generated/procedural placeholders for portraits and audio cues (beeps + MIDI), so it is immediately runnable without external files. The architecture is separated into engines (`MusicEngine`, `VoiceEngine`, `CombatEngine`) and content (`DemoContent`) to allow replacing placeholders with full textures, voice acting, and cutscenes.

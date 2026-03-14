@@ -1,9 +1,7 @@
-package main;
-
-import com.newrussia.game.GameController;
+package com.newrussia.game;
 
 /**
- * Standalone entrypoint for Fallout: New Russia (plain Java).
+ * Single entrypoint that loads all game systems and starts Fallout: New Russia.
  */
 public final class Main {
     private Main() {
