@@ -17,6 +17,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * Central coordinator for the whole game.
+ *
+ * This class intentionally owns most high-level flow, so Main stays minimal and
+ * UI/components can stay focused on rendering and input.
+ */
 public final class GameController {
     private final WorldBuilder worldBuilder;
     private final MusicEngine musicEngine;
@@ -56,10 +62,16 @@ public final class GameController {
 
     public Location location() {
         return state.currentLocation();
+    public GameState state() {
+        return state;
     }
 
     public Player player() {
         return state.player();
+    }
+
+    public Location location() {
+        return state.currentLocation();
     }
 
     public List<String> availableDestinations() {
@@ -72,6 +84,8 @@ public final class GameController {
             return;
         }
         if (!state.travelTo(destinationId)) {
+        boolean ok = state.travelTo(destinationId);
+        if (!ok) {
             append("Travel denied. Route not available from this location.\n");
             return;
         }
@@ -86,6 +100,9 @@ public final class GameController {
             append("Quest update: Silent Reactor Oath is now ACTIVE.\n");
         }
 
+        append("\n" + location().description() + "\n");
+        append("Texture direction: " + location().textureDirection() + "\n");
+        startLocationMusic();
         refreshUi();
     }
 
@@ -124,6 +141,10 @@ public final class GameController {
                 activateQuest("checkpoint");
                 completeQuest("checkpoint", "Kirov is convinced, and you secure authentic checkpoint routes.");
             }
+        if (speech >= npc.speechDifficulty()) {
+            append("Speech check: " + speech + " vs " + npc.speechDifficulty() + " -> SUCCESS\n");
+            append("Reward unlocked: " + npc.successReward() + "\n");
+            maybeAddRewardToInventory(npc.successReward());
         } else {
             append("Speech check: " + speech + " vs " + npc.speechDifficulty() + " -> FAILED\n");
             append("Reaction: " + npc.failReaction() + "\n");
@@ -216,6 +237,10 @@ public final class GameController {
         long done = state.quests().values().stream().filter(q -> q.status() == Quest.Status.COMPLETED).count();
         b.append("Active quests: ").append(active).append(" | Completed quests: ").append(done).append("\n");
 
+        b.append("\nLocation: ").append(location().title()).append(" (" + location().region() + ")\n");
+        b.append("Track: ").append(musicEngine.currentTrack()).append("\n");
+        b.append("Known hidden places: ").append(state.discoveredHidden().size()).append("\n");
+
         return b.toString();
     }
 
@@ -259,6 +284,14 @@ public final class GameController {
         }
         int roll = random.nextInt(100);
         int threshold = 42 + player().special().perception() * 4 + player().special().luck();
+    }
+
+    private boolean tryDiscover(String hidden) {
+        int roll = random.nextInt(100);
+        int threshold = 42 + player().special().perception() * 4 + player().special().luck();
+        if (state.discoveredHidden().contains(hidden)) {
+            return true;
+        }
         return roll < threshold;
     }
 
@@ -291,6 +324,7 @@ public final class GameController {
             append("Loot: Rifle Ammo\n");
             return;
         }
+
         if (random.nextInt(100) < 35) {
             player().inventory().add("Stimpak");
             append("Loot: Stimpak\n");
