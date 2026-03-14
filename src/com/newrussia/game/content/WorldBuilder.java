@@ -7,6 +7,7 @@ import com.newrussia.game.model.Location;
 import com.newrussia.game.model.Npc;
 import com.newrussia.game.model.Perk;
 import com.newrussia.game.model.Player;
+import com.newrussia.game.model.Quest;
 import com.newrussia.game.model.SpecialStats;
 
 import java.util.List;
@@ -204,6 +205,19 @@ public final class WorldBuilder {
                 "Kremlin Depth Pulse"
         );
 
+
+        java.util.List<Quest> quests = java.util.List.of(
+                new Quest("relay", "Echoes of the Relay",
+                        "Recover old relay calibration records from Novaya Metro hidden sectors.",
+                        "Discover any hidden place in Novaya Metro.", 70),
+                new Quest("checkpoint", "White Glove Ledger",
+                        "Get proof from Kirov and expose the fake checkpoint route operation.",
+                        "Pass speech check with Kirov in Red Square.", 90),
+                new Quest("core", "Silent Reactor Oath",
+                        "Enter Reactor Catacombs and stabilize command core protocols.",
+                        "Travel to Reactor Catacombs and survive one combat.", 140)
+        );
+
         Map<String, Location> world = Map.of(
                 novayaMetro.id(), novayaMetro,
                 redSquare.id(), redSquare,
@@ -215,6 +229,7 @@ public final class WorldBuilder {
                 reactorCatacombs.id(), reactorCatacombs
         );
 
+        return new GameState(player, world, novayaMetro.id(), quests);
         return new GameState(player, world, novayaMetro.id());
     }
 }

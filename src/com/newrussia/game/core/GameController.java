@@ -6,6 +6,7 @@ import com.newrussia.game.model.GameState;
 import com.newrussia.game.model.Location;
 import com.newrussia.game.model.Npc;
 import com.newrussia.game.model.Player;
+import com.newrussia.game.model.Quest;
 import com.newrussia.game.systems.CombatSystem;
 import com.newrussia.game.systems.MusicEngine;
 import com.newrussia.game.systems.VoiceEngine;
@@ -46,6 +47,7 @@ public final class GameController {
             frame = new GameFrame(this);
             frame.open();
             startLocationMusic();
+            autoActivateIntroQuest();
             logIntro();
             refreshUi();
         });
@@ -58,6 +60,8 @@ public final class GameController {
         }
     }
 
+    public Location location() {
+        return state.currentLocation();
     public GameState state() {
         return state;
     }
@@ -79,6 +83,7 @@ public final class GameController {
             append("Travel aborted: no destination selected.\n");
             return;
         }
+        if (!state.travelTo(destinationId)) {
         boolean ok = state.travelTo(destinationId);
         if (!ok) {
             append("Travel denied. Route not available from this location.\n");
@@ -86,6 +91,15 @@ public final class GameController {
         }
 
         append("You travel to " + location().title() + " in " + location().region() + ".\n");
+        append(location().description() + "\n");
+        append("Texture direction: " + location().textureDirection() + "\n");
+        startLocationMusic();
+
+        if ("reactor_catacombs".equals(location().id())) {
+            activateQuest("core");
+            append("Quest update: Silent Reactor Oath is now ACTIVE.\n");
+        }
+
         append("\n" + location().description() + "\n");
         append("Texture direction: " + location().textureDirection() + "\n");
         startLocationMusic();
@@ -118,6 +132,15 @@ public final class GameController {
         npc.lines().forEach(line -> append(line.speaker() + ": \"" + line.text() + "\"\n"));
 
         int speech = player().special().speechPower();
+        boolean success = speech >= npc.speechDifficulty();
+        if (success) {
+            append("Speech check: " + speech + " vs " + npc.speechDifficulty() + " -> SUCCESS\n");
+            append("Reward unlocked: " + npc.successReward() + "\n");
+            maybeAddRewardToInventory(npc.successReward());
+            if ("kirov".equals(npc.portraitSeed())) {
+                activateQuest("checkpoint");
+                completeQuest("checkpoint", "Kirov is convinced, and you secure authentic checkpoint routes.");
+            }
         if (speech >= npc.speechDifficulty()) {
             append("Speech check: " + speech + " vs " + npc.speechDifficulty() + " -> SUCCESS\n");
             append("Reward unlocked: " + npc.successReward() + "\n");
@@ -141,6 +164,11 @@ public final class GameController {
         String result = combatSystem.runFight(player(), enemy);
         append(result);
         maybePostCombatLoot(enemy);
+
+        if ("reactor_catacombs".equals(location().id())) {
+            completeQuest("core", "You survived combat in the reactor corridors.");
+        }
+
         refreshUi();
     }
 
@@ -157,12 +185,26 @@ public final class GameController {
                 append("Discovered: " + hidden + "\n");
                 state.markHiddenDiscovered(hidden);
                 maybeHiddenReward(hidden);
+
+                if (location().id().equals("novaya_metro")) {
+                    completeQuest("relay", "Relay evidence secured from Novaya Metro hidden infrastructure.");
+                }
             } else {
                 append("Possible trace found but not enough evidence: " + hidden + "\n");
             }
         }
 
         refreshUi();
+    }
+
+    public void showQuestLog() {
+        append("\n=== Quest Log ===\n");
+        for (Quest q : state.quests().values()) {
+            append("- [" + q.status() + "] " + q.title() + "\n");
+            append("  " + q.description() + "\n");
+            append("  Objective: " + q.objectiveHint() + "\n");
+        }
+        append("=================\n");
     }
 
     public String buildHudText() {
@@ -186,6 +228,14 @@ public final class GameController {
 
         b.append("\nInventory\n");
         p.inventory().forEach(item -> b.append("- ").append(item).append("\n"));
+
+        b.append("\nLocation: ").append(location().title()).append(" (").append(location().region()).append(")\n");
+        b.append("Track: ").append(musicEngine.currentTrack()).append("\n");
+        b.append("Known hidden places: ").append(state.discoveredHidden().size()).append("\n");
+
+        long active = state.quests().values().stream().filter(q -> q.status() == Quest.Status.ACTIVE).count();
+        long done = state.quests().values().stream().filter(q -> q.status() == Quest.Status.COMPLETED).count();
+        b.append("Active quests: ").append(active).append(" | Completed quests: ").append(done).append("\n");
 
         b.append("\nLocation: ").append(location().title()).append(" (" + location().region() + ")\n");
         b.append("Track: ").append(musicEngine.currentTrack()).append("\n");
@@ -221,6 +271,19 @@ public final class GameController {
         append("Welcome to Fallout: New Russia\n");
         append("A new run begins in the ruins of the capital.\n");
         append(buildSceneHeader());
+        append("Tip: open Quest Log from the bottom action bar.\n");
+    }
+
+    private void autoActivateIntroQuest() {
+        activateQuest("relay");
+    }
+
+    private boolean tryDiscover(String hidden) {
+        if (state.discoveredHidden().contains(hidden)) {
+            return true;
+        }
+        int roll = random.nextInt(100);
+        int threshold = 42 + player().special().perception() * 4 + player().special().luck();
     }
 
     private boolean tryDiscover(String hidden) {
@@ -278,6 +341,25 @@ public final class GameController {
             player().gainXp(10);
         } else {
             append("Night Event: Quiet night. No incidents.\n");
+        }
+    }
+
+    private void activateQuest(String questId) {
+        Quest q = state.quests().get(questId);
+        if (q != null) {
+            q.activate();
+        }
+    }
+
+    private void completeQuest(String questId, String reason) {
+        Quest q = state.quests().get(questId);
+        if (q == null) {
+            return;
+        }
+        q.activate();
+        if (q.complete()) {
+            player().gainXp(q.xpReward());
+            append("Quest complete: " + q.title() + " (" + reason + ") +" + q.xpReward() + " XP\n");
         }
     }
 }

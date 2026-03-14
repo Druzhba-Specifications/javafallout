@@ -42,6 +42,7 @@ public final class GameFrame extends JFrame {
     private final JButton scanButton;
     private final JButton cutsceneButton;
     private final JButton restButton;
+    private final JButton questButton;
 
     private final JButton clearLogButton;
     private final JButton helpButton;
@@ -63,6 +64,7 @@ public final class GameFrame extends JFrame {
         scanButton = new JButton("Search Hidden");
         cutsceneButton = new JButton("Play Cutscene");
         restButton = new JButton("Rest");
+        questButton = new JButton("Quest Log");
 
         clearLogButton = new JButton("Clear Log");
         helpButton = new JButton("Help");
@@ -174,6 +176,7 @@ public final class GameFrame extends JFrame {
         actions.add(scanButton);
         actions.add(cutsceneButton);
         actions.add(restButton);
+        actions.add(questButton);
 
         JLabel hint = new JLabel("Tip: talk to NPCs for speech checks, then search hidden places for rewards.");
         hint.setFont(new Font("SansSerif", Font.ITALIC, 12));
@@ -226,6 +229,10 @@ public final class GameFrame extends JFrame {
             controller.rest();
             statusLabel.setText("Status: Rest cycle complete");
         });
+        questButton.addActionListener(e -> {
+            controller.showQuestLog();
+            statusLabel.setText("Status: Quest log opened in mission feed");
+        });
 
         clearLogButton.addActionListener(e -> {
             storyArea.setText("");
@@ -263,6 +270,9 @@ public final class GameFrame extends JFrame {
                 + "Battle: Fight the primary hostile in current area.\n"
                 + "Search Hidden: Attempt to discover hidden places and loot.\n"
                 + "Play Cutscene: Log location-specific cinematic text.\n"
+                + "Rest: Fully heal and trigger possible nightly events.\n"
+                + "Quest Log: Print all quest states and objectives to the mission log.\n\n"
+                + "HUD panel on the right shows S.P.E.C.I.A.L, perks, inventory, progression, and quest counters.\n";
                 + "Rest: Fully heal and trigger possible nightly events.\n\n"
                 + "HUD panel on the right shows S.P.E.C.I.A.L, perks, inventory, and progression.\n";
 

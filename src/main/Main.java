@@ -1,5 +1,11 @@
 package main;
 
+import com.newrussia.game.core.GameController;
+
+/**
+ * Fallout: New Russia
+ *
+ * Plain Java entrypoint designed for IntelliJ IDEA execution.
 import com.newrussia.game.GameController;
 
 /**
@@ -10,6 +16,8 @@ public final class Main {
     }
 
     public static void main(String[] args) {
+        GameController controller = new GameController();
+        controller.boot();
         GameController.launchUi();
     }
 }
